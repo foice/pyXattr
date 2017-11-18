@@ -1,4 +1,5 @@
-#/usr/bin/env python
+#!/usr/bin/env python
+
 import time
 import datetime, time
 import json
@@ -10,7 +11,11 @@ import utils
 from beautifultable import BeautifulTable
 # manipulate a JSON list contained in the xattr called pyXattr
 # keep track of the same in a python dictionary serialized at $KikDeskFile
-VERSION=0.2
+
+# TODO
+# - remove a  tag from a file
+
+VERSION=0.3
 def DEBUG():
     return False
 debugline="DEBUG: "
@@ -36,7 +41,6 @@ def list_tags_in_reverse_time(current_kikdb):
     tags_times=[ [ [ tag["tag"], tag["time"] ] for tag in tags ] for filekey, tags in current_kikdb.items() ]
     faltlist=utils.flattenOnce(tags_times)
     return utils.sort_by_ith(faltlist,1)
-
 
 def get_current_pyXattr(filename):
     son=[]
@@ -74,33 +78,62 @@ def extend_tags(initial_tags_set,tags):
         tags_array=tags.split(",")
         if DEBUG(): print debugline, tags_array
         for tag in tags_array:
-            if check_if_tag_exists(initial_tags_set,tag)==0:
+            clean_tag=utils.remove_multiple_spaces(tag)
+            clean_tag=clean_tag.strip()
+            if check_if_tag_exists(initial_tags_set,clean_tag)==0:
                 _this_tag={}
-                _this_tag["tag"]=remove_multiple_spaces(tag).strip
+                _this_tag["tag"]=clean_tag
                 _this_tag["mtime"]=human_time
                 _this_tag["time"]=epoch_time
                 working_tags_set.append(_this_tag)
                 # add this tag to the registry ...
     return working_tags_set
 
+def remove_tags(initial_tags_set,tags):
+    working_tags_set = initial_tags_set;
+    mod_time=datetime.datetime.now()
+    human_time = mod_time.strftime("%A, %d. %B %Y %I:%M%p")
+    epoch_time = mod_time.strftime("%s")
+    if len(tags)>0:
+        tags_array=tags.split(",")
+        if DEBUG(): print debugline, tags_array
+        for tag in tags_array:
+            clean_tag=utils.remove_multiple_spaces(tag)
+            clean_tag=clean_tag.strip()
+            if check_if_tag_exists(initial_tags_set,clean_tag)>0:
+                print "... will remove it, instead."
+                working_tags_set = [ existing_tag for existing_tag in working_tags_set if clean_tag != existing_tag["tag"] ]
+    return working_tags_set
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-a", "-t", "--add_tag", default="", help="tags to be added. CSV format")
+    parser.add_argument("-r", "--remove_tag", default="", help="tags to be removed. CSV format")
     parser.add_argument('-f', '--filename', default="", help="file to be processed")
     parser.add_argument('-l', '--list', default=False, action="store_true", help="list recently used tags putting most revent the bottom of the  list")
     args = parser.parse_args()
     ###################################
     filename=args.filename
     tags=args.add_tag
+    grow=len(args.add_tag)
+    tags=args.remove_tag
+    shrink=len(args.remove_tag)
     listing=args.list
     ###################################
 
     if (len(filename)>0):
         #get the current tag value. it is a is a list of dictionaries
         initial_tags_set = get_current_pyXattr(filename)
-    if len(tags)>0: # is the same as saying -a or -t or --add_tag was provided
-        # extend the tags
-        working_tags_set=extend_tags(initial_tags_set,tags)
+    if len(tags)>0: # is the same as saying -a or -d  was provided
+
+        if grow > 0:
+            # extend the tags
+            working_tags_set=extend_tags(initial_tags_set,tags)
+        if shrink > 0:
+            # reduce the tags
+            working_tags_set=remove_tags(initial_tags_set,tags)
+
         # make the tags into JSON
         pyXtag=json.dumps(working_tags_set)
         # write the tags
@@ -109,7 +142,7 @@ def main():
         for line in res.splitlines():
             print line
 
-        # extend the kikDB
+        # update the kikDB, valid for both grow or shrink
         kikdesk_file_exists=os.path.isfile(KikDeskFile)
         if not kikdesk_file_exists:
             _emptydic={}
@@ -118,7 +151,7 @@ def main():
         current_kikdb=load_current_json_kikdeskfile(KikDeskFile)
         serialize_dict_to_file_as_json(current_kikdb,KikDeskFile+".back")
 
-        print current_kikdb
+        if DEBUG(): print current_kikdb
         new_kikdb=current_kikdb
         new_kikdb[str(filename)]=working_tags_set
         serialize_dict_to_file_as_json(new_kikdb,KikDeskFile)
