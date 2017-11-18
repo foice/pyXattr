@@ -13,9 +13,14 @@ from beautifultable import BeautifulTable
 VERSION=0.2
 def DEBUG():
     return False
-
 debugline="DEBUG: "
+
 KikDeskFile="/Users/roberto/Dropbox/BibReader/Tags.kik"
+
+#### output format and options ####
+short_date_format='%Y-%m-%d'
+long_date_format='%Y-%m-%d %H:%M'
+recent_days=0.5
 
 def load_current_json_kikdeskfile(KikDeskFile):
     with open(KikDeskFile) as json_data:
@@ -123,9 +128,14 @@ def main():
         list_tags=list_tags_in_reverse_time(current_kikdb)
         #list_tags.reverse()
         table = BeautifulTable()
+        three_days_ago=datetime.datetime.now() - datetime.timedelta(days=recent_days)
         for row in list_tags:
             d = datetime.datetime.fromtimestamp(float(row[1]))
-            date_string = d.strftime('%Y-%m-%d')
+            _date_format=short_date_format
+
+            if d>three_days_ago:
+                _date_format=long_date_format
+            date_string = d.strftime(_date_format)
             table.append_row([row[0],date_string])
         print(table)
 
