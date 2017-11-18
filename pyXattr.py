@@ -1,12 +1,13 @@
 #/usr/bin/env python
 import time
-import datetime
+import datetime, time
 import json
 import utils
 import argparse
 import subprocess
 import sys, os
-
+import utils
+from beautifultable import BeautifulTable
 # manipulate a JSON list contained in the xattr called pyXattr
 # keep track of the same in a python dictionary serialized at $KikDeskFile
 VERSION=0.2
@@ -26,6 +27,10 @@ def serialize_dict_to_file_as_json(_emptydic,KikDeskFile):
     with open(KikDeskFile, "w") as outfile:
         json.dump(_emptydic, outfile)
 
+def list_tags_in_reverse_time(current_kikdb):
+    tags_times=[ [ [ tag["tag"], tag["time"] ] for tag in tags ] for filekey, tags in current_kikdb.items() ]
+    faltlist=utils.flattenOnce(tags_times)
+    return utils.sort_by_ith(faltlist,1)
 
 
 def get_current_pyXattr(filename):
@@ -66,7 +71,7 @@ def extend_tags(initial_tags_set,tags):
         for tag in tags_array:
             if check_if_tag_exists(initial_tags_set,tag)==0:
                 _this_tag={}
-                _this_tag["tag"]=tag
+                _this_tag["tag"]=remove_multiple_spaces(tag).strip
                 _this_tag["mtime"]=human_time
                 _this_tag["time"]=epoch_time
                 working_tags_set.append(_this_tag)
@@ -77,15 +82,18 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-a", "-t", "--add_tag", default="", help="tags to be added. CSV format")
     parser.add_argument('-f', '--filename', default="", help="file to be processed")
+    parser.add_argument('-l', '--list', default=False, action="store_true", help="list recently used tags putting most revent the bottom of the  list")
     args = parser.parse_args()
     ###################################
     filename=args.filename
     tags=args.add_tag
+    listing=args.list
     ###################################
 
-    #get the current tag value. it is a is a list of dictionaries
-    initial_tags_set = get_current_pyXattr(filename)
-    if len(tags)>0:
+    if (len(filename)>0):
+        #get the current tag value. it is a is a list of dictionaries
+        initial_tags_set = get_current_pyXattr(filename)
+    if len(tags)>0: # is the same as saying -a or -t or --add_tag was provided
         # extend the tags
         working_tags_set=extend_tags(initial_tags_set,tags)
         # make the tags into JSON
@@ -109,6 +117,18 @@ def main():
         new_kikdb=current_kikdb
         new_kikdb[str(filename)]=working_tags_set
         serialize_dict_to_file_as_json(new_kikdb,KikDeskFile)
+
+    if listing:
+        current_kikdb=load_current_json_kikdeskfile(KikDeskFile)
+        list_tags=list_tags_in_reverse_time(current_kikdb)
+        #list_tags.reverse()
+        table = BeautifulTable()
+        for row in list_tags:
+            d = datetime.datetime.fromtimestamp(float(row[1]))
+            date_string = d.strftime('%Y-%m-%d')
+            table.append_row([row[0],date_string])
+        print(table)
+
 
 
 
