@@ -7,8 +7,9 @@ import argparse
 import subprocess
 import sys, os
 
-# manipulate a JSON list contained in the xattr ""
-VERSION=0.1
+# manipulate a JSON list contained in the xattr called pyXattr
+# keep track of the same in a python dictionary serialized at $KikDeskFile
+VERSION=0.2
 def DEBUG():
     return False
 
