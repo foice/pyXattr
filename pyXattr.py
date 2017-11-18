@@ -115,10 +115,14 @@ def main():
     args = parser.parse_args()
     ###################################
     filename=args.filename
-    tags=args.add_tag
+
     grow=len(args.add_tag)
-    tags=args.remove_tag
     shrink=len(args.remove_tag)
+    if grow > 0:
+        tags=args.add_tag
+    if shrink > 0:
+        tags=args.remove_tag
+
     listing=args.list
     ###################################
 
