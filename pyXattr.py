@@ -5,7 +5,7 @@ import json
 import utils
 import argparse
 import subprocess
-import sys
+import sys, os
 
 # manipulate a JSON list contained in the xattr ""
 VERSION=0.1
@@ -13,21 +13,37 @@ def DEBUG():
     return False
 
 debugline="DEBUG: "
+KikDeskFile="/Users/roberto/Dropbox/BibReader/Tags.kik"
+
+def load_current_json_kikdeskfile(KikDeskFile):
+    with open(KikDeskFile) as json_data:
+        d = json.load(json_data)
+        #print(d)
+    return d
+
+def serialize_dict_to_file_as_json(_emptydic,KikDeskFile):
+    with open(KikDeskFile, "w") as outfile:
+        json.dump(_emptydic, outfile)
+
 
 
 def get_current_pyXattr(filename):
-    #son=[]
-    res = subprocess.check_output(["xattr", "-p", "pyXattr", str(filename)])
-    #res is stdout. it has 0 lines when the attribute is missing, because then we only have stderr
-    lines=res.splitlines()
-    if len(lines)==0:
+    son=[]
+    try:
+        res = subprocess.check_output(["xattr", "-p", "pyXattr", str(filename)])
+        #res is stdout. it has 0 lines when the attribute is missing, because then we only have stderr
+        lines=res.splitlines()
+        if len(lines)==0:
+            son=[]
+        elif len(lines)==1:
+            son = json.loads(lines[0])
+            if DEBUG(): print debugline, "current jpyXattr: ", son
+        else:
+            print "too many lines"
+            sys.exit()
+    except subprocess.CalledProcessError:
         son=[]
-    elif len(lines)==1:
-        son = json.loads(lines[0])
-        if DEBUG(): print debugline, "current jpyXattr: ", son
-    else:
-        print "too many lines"
-        sys.exit()
+
     return son
 
 def check_if_tag_exists(initial_tags_set,tag):
@@ -59,24 +75,40 @@ def extend_tags(initial_tags_set,tags):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-a", "-t", "--add_tag", default="", help="tags to be added. CSV format")
-    parser.add_argument('-f', '--filename', default="test.pdf", help="file to be processed")
+    parser.add_argument('-f', '--filename', default="", help="file to be processed")
     args = parser.parse_args()
     ###################################
     filename=args.filename
     tags=args.add_tag
     ###################################
 
-
     #get the current tag value. it is a is a list of dictionaries
     initial_tags_set = get_current_pyXattr(filename)
-    working_tags_set=extend_tags(initial_tags_set,tags)
-    pyXtag=json.dumps(working_tags_set)
-
     if len(tags)>0:
+        # extend the tags
+        working_tags_set=extend_tags(initial_tags_set,tags)
+        # make the tags into JSON
+        pyXtag=json.dumps(working_tags_set)
+        # write the tags
         print "writing ", pyXtag
         res = subprocess.check_output(["xattr", "-w", "pyXattr", pyXtag, str(filename)])
         for line in res.splitlines():
             print line
+
+        # extend the kikDB
+        kikdesk_file_exists=os.path.isfile(KikDeskFile)
+        if not kikdesk_file_exists:
+            _emptydic={}
+            serialize_dict_to_file_as_json(_emptydic,KikDeskFile)
+
+        current_kikdb=load_current_json_kikdeskfile(KikDeskFile)
+        serialize_dict_to_file_as_json(current_kikdb,KikDeskFile+".back")
+
+        print current_kikdb
+        new_kikdb=current_kikdb
+        new_kikdb[str(filename)]=working_tags_set
+        serialize_dict_to_file_as_json(new_kikdb,KikDeskFile)
+
 
 
 if __name__ == '__main__':
