@@ -13,9 +13,9 @@ from beautifultable import BeautifulTable
 # keep track of the same in a python dictionary serialized at $KikDeskFile
 
 # TODO
-# [] carry the BibItem in from the AppleScript and store it as a tag this would add a new argument -b which can be empty, but that will be always filled when called from BibDesk
 
-VERSION=0.4
+
+VERSION=0.5
 def DEBUG():
     return False
 debugline="DEBUG: "
