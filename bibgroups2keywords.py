@@ -202,10 +202,16 @@ def main():
         if all_groups:
             for g,p in Groups.items():
                 print "Working on group ", g,": ",p
-                add_keywords_to_group_members(g,Groups,bibitem_dic)
+                try:
+                    if len(Groups[g])>0:
+                        add_keywords_to_group_members(g,Groups,bibitem_dic)
+                except KeyError:
+                    print "group ", g," is empty."
+                    
         elif len(groupname)>0:
-            print Groups[groupname]
-            add_keywords_to_group_members(groupname,Groups,bibitem_dic)
+            if len(Groups[groupname])>0:
+                print Groups[groupname]
+                add_keywords_to_group_members(groupname,Groups,bibitem_dic)
 
 
 if __name__ == '__main__':
