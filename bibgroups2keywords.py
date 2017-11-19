@@ -1,17 +1,89 @@
 #!/usr/bin/env python
-
 import re
 import utils
 from xml.etree import ElementTree
 import json
 import argparse
-# takes a bibtex file and makes a XML file with the content of the Bibdesk Static Groups
-VERSION=0.1
+import subprocess
+import plistlib
+import base64
+import bibtexparser
+import timeit
+
+#from Foundation import NSPropertyListSerialization, NSData, NSPropertyListXMLFormat_v1_0
+
+
+# TODO
+# find latest modification time of group members
+
+VERSION=0.2
 
 def DEBUG():
     return True
 
+def bibtex2dictionary(file_name):
+    with open(file_name) as bibtex_file:
+        bib_database = bibtexparser.load(bibtex_file)
+
+    return bib_database.get_entry_dict()
+
+def findBdsk_File_N(n,bibtex_dic,bibitem):
+    base64str=""
+    if DEBUG(): print "working on ", bibitem
+    _item="bdsk-file-"+str(n)
+    try:
+        base64str=bibtex_dic[bibitem][_item]
+    except KeyError:
+        base64str=""
+
+    return base64str
+
+def bibitem2paths(bibitem,bibitem_dic):
+    attempt=0
+    relative_paths=[]
+    base64path=''
+    while base64path != '' or attempt==0:
+        attempt=attempt+1
+        base64path=findBdsk_File_N(attempt,bibitem_dic,bibitem)
+        if base64path != '':
+            relative_path=convertBase64alias2relativePath(base64path,bibitem)
+            relative_paths.append(relative_path)
+    return relative_paths
+
+def convertBase64alias2relativePath(base64path,bibitem):
+    res = subprocess.check_output(["./base64xml.sh", base64path, bibitem])
+    #print base64.b64decode(base64path)
+    _xmlpath=bibitem+".xml"
+    _xml_dic=plistlib.readPlist(_xmlpath)
+    #for k,v in _xml_dic.items():
+    #    print k
+    relative_path=_xml_dic["$objects"][4]
+    #print relative_path
+    #data_absolute_path=_xml_dic["$objects"][5]['NS.data']
+    #print data_absolute_path
+    #print base64.b64decode(data_absolute_path)
+    res = subprocess.check_output(["rm", _xmlpath])
+    _xmlpath
+    return relative_path
+
+def add_keywords_to_group_members(groupname,Groups,bibitem_dic):
+    for bibitem in Groups[groupname]:
+        #print bibitem_dic[bibitem]
+        relative_paths=bibitem2paths(bibitem,bibitem_dic)
+        for path in relative_paths:
+            group_word="G:"+groupname
+            if DEBUG(): print 'Adding the g-keyword ', groupname, ' to ' , path
+            res = subprocess.check_output(["pyXattr.py","-a",group_word, "-f", path]) # "-d", mtime)
+            res = subprocess.check_output(["tag","-a",group_word, path])
+
 def file2xml_lines(file_name):
+    _xml_groups=[]
+    file = open(file_name,"r")
+    for line in file:
+        _xml_groups.append(line)
+    return _xml_groups
+
+def file2xml_tagged_lines(file_name):
     static_groups_group=False
     _xml_groups=[]
     file = open(file_name,"r")
@@ -58,7 +130,11 @@ def xml_lines2dic(xml_groups):
 
 def main():
     usage = """Usage: %prog [options]"""
-    epilog = ""
+    epilog = """
+    It can take a bibtex file and make an XML file with the content of the Bibdesk Static Groups.
+    It can print the print bibitem of the members of a named group or of all groups. It can print the relative path of a PDF file in a bibitem.
+    It can add
+    """
     parser = argparse.ArgumentParser(usage=usage, version=VERSION,
                                    epilog=epilog)
 
@@ -89,9 +165,10 @@ def main():
     groupname=args.group
     all_groups=args.all_groups
     #################################
+    if DEBUG(): print "working on ", file_name
     xml_groups=[]
     if len(file_name)>0:
-        xml_groups=file2xml_lines(file_name)
+        xml_groups=file2xml_tagged_lines(file_name)
 
     if write_xml_to_file:
         utils.write_lines_to_file(xml_groups,"mylines.xml")
@@ -99,16 +176,22 @@ def main():
 
     Groups=xml_lines2dic(xml_groups)
 
-    #groupname='AMS photons'
-    if groups2keyword:
-        print Groups[groupname]
 
-    #    Groups[str(dic[1].text)]=list(dic[3].text)
-    #xml.find(".//*[@tag='001']")
-    #xml_dict=xmltodict.parse(xml_string)
-    #print(json.dumps(result, indent=4))
-    #with open(file_name, 'r') as myfile:
-    #    string_data=myfile.read().replace('\n', '')
+    if groups2keyword:
+
+        start_time = timeit.default_timer()
+        bibitem_dic=bibtex2dictionary(file_name)
+        end_time= timeit.default_timer()
+        print "Parsing the bibtex file ", file_name, " took ",   end_time - start_time, " seconds"
+
+        if all_groups:
+            for g,p in Groups.items():
+                print "Working on group ", g,": ",p
+                add_keywords_to_group_members(g,Groups,bibitem_dic)
+        elif len(groupname)>0:
+            print Groups[groupname]
+            add_keywords_to_group_members(groupname,Groups,bibitem_dic)
+
 
 if __name__ == '__main__':
     main()
