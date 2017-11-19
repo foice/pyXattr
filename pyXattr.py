@@ -15,7 +15,7 @@ from beautifultable import BeautifulTable
 # TODO
 # [] carry the BibItem in from the AppleScript and store it as a tag this would add a new argument -b which can be empty, but that will be always filled when called from BibDesk
 
-VERSION=0.3
+VERSION=0.4
 def DEBUG():
     return False
 debugline="DEBUG: "
@@ -61,11 +61,18 @@ def get_current_pyXattr(filename):
 
     return son
 
+class optionsSet():
+    """just a data structure to move around options that affect the behaviour of the program"""
+    def __init__(self):
+        self.sync = True
+
+
 class kikData():
     """just a data structure to move around tags and bibitem information"""
     def __init__(self):
         self.tags = ""
         self.bibitem = ""
+        self.mtime = ""
 
 def get_tags_from_kik(kik_set):
     result=[]
@@ -105,6 +112,7 @@ def extend_tags(initial_kik_set,kik):
 
     #initial_tags_set must be split in the bibitem part and the rest
     tags=kik.tags
+    _mtime=kik.mtime
 
     bibitem=""
     if len(kik.bibitem)>0:
@@ -113,7 +121,11 @@ def extend_tags(initial_kik_set,kik):
         bibitem=initial_bibitem
 
     working_tags_set = initial_tags_set;
-    mod_time=datetime.datetime.now()
+    if _mtime=="":
+        mod_time=datetime.datetime.now()
+    else:
+        mod_time = datetime.datetime.fromtimestamp(float(_mtime))
+
     human_time = mod_time.strftime("%A, %d. %B %Y %I:%M%p")
     epoch_time = mod_time.strftime("%s")
     if len(tags)>0:
@@ -180,13 +192,16 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-a", "-t", "--add_tag", default="", help="tags to be added. CSV format")
     parser.add_argument("-r", "--remove_tag", default="", help="tags to be removed. CSV format")
+    parser.add_argument('--not_sync_osx', default=True, action="store_false", help="do not call tag utility to keep in sync the OS X tags (which are accessible in Finder and searchable via spotlight tag: )")
     parser.add_argument('-f', '--filename', default="", help="file to be processed")
     parser.add_argument("-b", "--bibitem", default="", help="bibitem string to be added as a tag")
+    parser.add_argument("-m", "--mtime", default="", help="epoch time at which to place the time info of the tag")
     parser.add_argument('-l', '--list', default=False, action="store_true", help="list recently used tags putting most revent the bottom of the  list")
     args = parser.parse_args()
     ###################################
     filename=args.filename
     listing=args.list
+    m_time=args.mtime
     bibitem=args.bibitem
     grow=len(args.add_tag)
     shrink=len(args.remove_tag)
@@ -205,6 +220,8 @@ def main():
         kik=kikData()
         kik.bibitem=bibitem
         kik.tags=tags
+        kik.mtime=m_time
+
 
         if grow > 0:
             # extend the tags
