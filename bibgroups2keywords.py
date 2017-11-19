@@ -9,14 +9,19 @@ import plistlib
 import base64
 import bibtexparser
 import timeit
+import datetime
+import dateutil.parser
 
 #from Foundation import NSPropertyListSerialization, NSData, NSPropertyListXMLFormat_v1_0
 
 
 # TODO
-# find latest modification time of group members
+# - AppKit connect to BibDesk to rename static groups
+#   in alternative I can work on the XML and replace it into the .bib but might be dangerous with BibDesk open
+# - AppKit connec to BibDesk to add items to static groups (really needed?)
 
-VERSION=0.2
+
+VERSION=0.3
 
 def DEBUG():
     return True
@@ -66,14 +71,24 @@ def convertBase64alias2relativePath(base64path,bibitem):
     _xmlpath
     return relative_path
 
+def get_epoch_time_of_bibitem(bibitem,bibitem_dic):
+    _a_human_time=bibitem_dic[bibitem]["date-modified"] # format is 2017-11-19 16:42:59 +0000
+    _mod_time=dateutil.parser.parse(_a_human_time)
+    #_format="%Y-%m-%d %H:%M:%S +%f"
+    #_mod_time=datetime.datetime.strptime(_a_human_time, _format)
+    #print _a_human_time
+    #print _mod_time.strftime("%A, %d. %B %Y %I:%M%p")
+    return _mod_time.strftime("%s")
+
 def add_keywords_to_group_members(groupname,Groups,bibitem_dic):
     for bibitem in Groups[groupname]:
         #print bibitem_dic[bibitem]
+        mtime=get_epoch_time_of_bibitem(bibitem,bibitem_dic)
         relative_paths=bibitem2paths(bibitem,bibitem_dic)
         for path in relative_paths:
             group_word="G:"+groupname
             if DEBUG(): print 'Adding the g-keyword ', groupname, ' to ' , path
-            res = subprocess.check_output(["pyXattr.py","-a",group_word, "-f", path]) # "-d", mtime)
+            res = subprocess.check_output(["pyXattr.py","-a", group_word, "-f", path, "-m", mtime])
             res = subprocess.check_output(["tag","-a",group_word, path])
 
 def file2xml_lines(file_name):
