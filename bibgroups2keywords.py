@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import re
+import os
 import utils
 from xml.etree import ElementTree
 import json
@@ -56,7 +57,7 @@ def bibitem2paths(bibitem,bibitem_dic):
     return relative_paths
 
 def convertBase64alias2relativePath(base64path,bibitem):
-    res = subprocess.check_output(["./base64xml.sh", base64path, bibitem])
+    res = subprocess.check_output(["base64xml.sh", base64path, bibitem])
     #print base64.b64decode(base64path)
     _xmlpath=bibitem+".xml"
     _xml_dic=plistlib.readPlist(_xmlpath)
@@ -86,10 +87,15 @@ def add_keywords_to_group_members(groupname,Groups,bibitem_dic):
         mtime=get_epoch_time_of_bibitem(bibitem,bibitem_dic)
         relative_paths=bibitem2paths(bibitem,bibitem_dic)
         for path in relative_paths:
-            group_word="G:"+groupname
-            if DEBUG(): print 'Adding the g-keyword ', groupname, ' to ' , path
-            res = subprocess.check_output(["pyXattr.py","-a", group_word, "-f", path, "-m", mtime])
-            res = subprocess.check_output(["tag","-a",group_word, path])
+            _file_exists=os.path.isfile(path)
+            if _file_exists:
+                group_word="G:"+groupname
+                if DEBUG(): print 'Adding the g-keyword ', groupname, ' to ' , path
+                res = subprocess.check_output(["pyXattr.py","-a", group_word, "-f", path, "-m", mtime])
+                res = subprocess.check_output(["tag","-a",group_word, path])
+            else:
+                if DEBUG(): print path," file is missing"
+                res = subprocess.check_output(["echo", path,">>","missing_files.log"])
 
 def file2xml_lines(file_name):
     _xml_groups=[]
@@ -148,7 +154,7 @@ def main():
     epilog = """
     It can take a bibtex file and make an XML file with the content of the Bibdesk Static Groups.
     It can print the print bibitem of the members of a named group or of all groups. It can print the relative path of a PDF file in a bibitem.
-    It can add
+    It can add a tag and a pyXattr to all the files in a named group or in all groups
     """
     parser = argparse.ArgumentParser(usage=usage, version=VERSION,
                                    epilog=epilog)
@@ -207,7 +213,7 @@ def main():
                         add_keywords_to_group_members(g,Groups,bibitem_dic)
                 except KeyError:
                     print "group ", g," is empty."
-                    
+
         elif len(groupname)>0:
             if len(Groups[groupname])>0:
                 print Groups[groupname]
