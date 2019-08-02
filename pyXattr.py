@@ -189,7 +189,7 @@ def remove_tags(initial_kik_set,kik):
 # TODO
 # add a function to change the keyword field of the bibtex file, possibly through BibDesk, which is likely to be concurrently using the file, hence better not pass above it.
 
-def main():
+def main(args):
     parser = argparse.ArgumentParser()
     parser.add_argument("-a", "-t", "--add_tag", default="", help="tags to be added. CSV format")
     parser.add_argument("-r", "--remove_tag", default="", help="tags to be removed. CSV format")
@@ -199,7 +199,8 @@ def main():
     parser.add_argument("-m", "--mtime", default="", help="epoch time at which to place the time info of the tag")
     parser.add_argument('-l', '--list', default=False, action="store_true", help="list recently used tags putting most revent the bottom of the  list")
     parser.add_argument('-s', '--short', default=False, action="store_true", help="keep list minimal as to pass it to further parsing")
-    args = parser.parse_args()
+    #args = parser.parse_args()
+    args = parser.parse_args(args)
     ###################################
     filename=args.filename
     listing=args.list
@@ -275,8 +276,8 @@ def main():
         else:
             p_Table=pd.DataFrame(table)
             print(p_Table.info())
-
+            return p_Table[0].unique()[::-1]
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])
