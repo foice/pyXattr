@@ -9,6 +9,7 @@ import subprocess
 import sys, os
 import utils
 from beautifultable import BeautifulTable
+import pandas as pd
 # manipulate a JSON list contained in the xattr called pyXattr
 # keep track of the same in a python dictionary serialized at $KikDeskFile
 
@@ -197,10 +198,12 @@ def main():
     parser.add_argument("-b", "--bibitem", default="", help="bibitem string to be added as a tag")
     parser.add_argument("-m", "--mtime", default="", help="epoch time at which to place the time info of the tag")
     parser.add_argument('-l', '--list', default=False, action="store_true", help="list recently used tags putting most revent the bottom of the  list")
+    parser.add_argument('-s', '--short', default=False, action="store_true", help="keep list minimal as to pass it to further parsing")
     args = parser.parse_args()
     ###################################
     filename=args.filename
     listing=args.list
+    short_listing=args.short
     m_time=args.mtime
     bibitem=args.bibitem
     grow=len(args.add_tag)
@@ -267,8 +270,11 @@ def main():
                 _date_format=long_date_format
             date_string = d.strftime(_date_format)
             table.append_row([row[0],date_string])
-        print(table)
-
+        if not short_listing:
+            print(table)
+        else:
+            p_Table=pd.DataFrame(table)
+            print(p_Table.info())
 
 
 
