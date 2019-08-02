@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3.7
 
 import time
 import datetime, time
@@ -52,9 +52,9 @@ def get_current_pyXattr(filename):
             son=[]
         elif len(lines)==1:
             son = json.loads(lines[0])
-            if DEBUG(): print debugline, "current jpyXattr: ", son
+            if DEBUG(): print( debugline, "current jpyXattr: ", son)
         else:
-            print "too many lines"
+            print( "too many lines")
             sys.exit()
     except subprocess.CalledProcessError:
         son=[]
@@ -81,7 +81,7 @@ def get_tags_from_kik(kik_set):
             if len(element["tag"])>0:
                 result.append(element)
         except KeyError:
-            if DEBUG(): print debugline, element, " was not a tag"
+            if DEBUG(): print( debugline, element, " was not a tag")
     return result
 
 def get_bibitem_from_kik(kik_set):
@@ -91,7 +91,7 @@ def get_bibitem_from_kik(kik_set):
             if len(element["bibitem"])>0:
                 result=element["bibitem"]
         except KeyError:
-            if DEBUG(): print debugline, element, " was not a bibitem"
+            if DEBUG(): print( debugline, element, " was not a bibitem")
     return result
 
 
@@ -102,7 +102,7 @@ def check_if_tag_exists(initial_kik_set,tag):
     for tt in range(len(initial_tags_set)):
         if initial_tags_set[tt]["tag"] == tag:
             res=1
-            print "tag ", tag, " already present. will not add it again"
+            print( "tag ", tag, " already present. will not add it again")
     return res
 
 def extend_tags(initial_kik_set,kik):
@@ -130,7 +130,7 @@ def extend_tags(initial_kik_set,kik):
     epoch_time = mod_time.strftime("%s")
     if len(tags)>0:
         tags_array=tags.split(",")
-        if DEBUG(): print debugline, tags_array
+        if DEBUG(): print( debugline, tags_array)
         for tag in tags_array:
             clean_tag=utils.remove_multiple_spaces(tag)
             clean_tag=clean_tag.strip()
@@ -166,12 +166,12 @@ def remove_tags(initial_kik_set,kik):
     epoch_time = mod_time.strftime("%s")
     if len(tags)>0:
         tags_array=tags.split(",")
-        if DEBUG(): print debugline, tags_array
+        if DEBUG(): print( debugline, tags_array)
         for tag in tags_array:
             clean_tag=utils.remove_multiple_spaces(tag)
             clean_tag=clean_tag.strip()
             if check_if_tag_exists(initial_tags_set,clean_tag)>0:
-                print "... will remove it, instead."
+                print("... will remove it, instead.")
                 working_tags_set = [ existing_tag for existing_tag in working_tags_set if clean_tag != existing_tag["tag"] ]
 
     if len(bibitem)>0:
@@ -234,10 +234,10 @@ def main():
         # make the tags into JSON
         pyXtag=json.dumps(working_tags_set)
         # write the tags
-        print "writing ", pyXtag
+        print( "writing ", pyXtag)
         res = subprocess.check_output(["xattr", "-w", "pyXattr", pyXtag, str(filename)])
         for line in res.splitlines():
-            print line
+            print( line)
 
         # update the kikDB, valid for both grow or shrink
         kikdesk_file_exists=os.path.isfile(KikDeskFile)
@@ -248,7 +248,7 @@ def main():
         current_kikdb=load_current_json_kikdeskfile(KikDeskFile)
         serialize_dict_to_file_as_json(current_kikdb,KikDeskFile+".back")
 
-        if DEBUG(): print current_kikdb
+        if DEBUG(): print( current_kikdb)
         new_kikdb=current_kikdb
         new_kikdb[str(filename)]=working_tags_set
         serialize_dict_to_file_as_json(new_kikdb,KikDeskFile)
