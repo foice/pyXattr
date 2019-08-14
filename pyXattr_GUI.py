@@ -56,9 +56,12 @@ def listbox_update(_listbox,data):
 
 def on_select(event):
     # display element selected on list
+    current_selection_text=event.widget.get(event.widget.curselection())
     print('(event) previous:', event.widget.get('active'))
-    print('(event)  current:', event.widget.get(event.widget.curselection()))
+    print('(event)  current:', current_selection_text)
     print('---')
+    current_files_kiks=pyXattr.main(['-l','-f',PDFfolder+current_selection_text])
+    print(current_files_kiks)
 
 def add():
     pass
@@ -71,9 +74,10 @@ keywords=pyXattr.main(['-l','-s'])
 #print(keywords)
 
 
+PDFfolder="/Users/roberto/cernbox/BibDeskPDFs/"
 
 #dirlist = listdir_shell('/Users/roberto/cernbox/BibDeskPDFs/', ['-t'])
-ls = subprocess.Popen(["ls", "-t", "/Users/roberto/cernbox/BibDeskPDFs/"],                 stdout=subprocess.PIPE)
+ls = subprocess.Popen(["ls", "-t", PDFfolder],                 stdout=subprocess.PIPE)
 dirlist = [ (item.decode('UTF-8')).strip('\n') for item in ls.stdout ]
 
 #print(dirlist)
@@ -88,47 +92,48 @@ mainframe = ttk.Frame(content,borderwidth=5, relief="sunken")#, width=1200, heig
 
 
 
-listbox = Listbox(content,width=80,height=100)
-listbox.pack()
-##listbox.bind('<Double-Button-1>', on_select)
-listbox.bind('<<ListboxSelect>>', on_select)
-listbox_update(listbox,keywords)
+listbox_keywords = Listbox(content,width=30,height=100)
+listbox_keywords.pack()
+##listbox_keywords.bind('<Double-Button-1>', on_select)
+listbox_keywords.bind('<<ListboxSelect>>', on_select)
+listbox_update(listbox_keywords,keywords)
 
 key_word = StringVar()
 
 keyword_entry = ttk.Entry(content,width=30,textvariable=key_word)
 keyword_entry.pack()
-keyword_entry.bind('<KeyRelease>', functools.partial(on_keyrelease,**{'listbox':listbox,'list':keywords}) )
+keyword_entry.bind('<KeyRelease>', functools.partial(on_keyrelease,**{'listbox':listbox_keywords,'list':keywords}) )
 
 keyword_entry_help = ttk.Label(content, \
 text=\
 '* matches everything,  \
 ? matches any single character,  \
 [seq] matches any character in seq,  \
-[!seq] matches any character not in seq')
+[!seq] matches any character not in seq\n \
+e.g. type "*Weinberg*" to search for anything containing "Weinberg"')
 
 #ttk.Button(mainframe, text="Add", command=add).grid(column=2, row=2, sticky=W)
-listbox_f = Listbox(content,width=80,height=100)
-listbox_f.pack()
+listbox_filenames = Listbox(content,width=80,height=100)
+listbox_filenames.pack()
 ##listbox.bind('<Double-Button-1>', on_select)
-listbox_f.bind('<<ListboxSelect>>', on_select)
-listbox_update(listbox_f,dirlist)
+listbox_filenames.bind('<<ListboxSelect>>', on_select)
+listbox_update(listbox_filenames,dirlist)
 
 file_name = StringVar()
 
 filename_entry = ttk.Entry(content,width=80,textvariable=file_name)
 filename_entry.pack()
-filename_entry.bind('<KeyRelease>', functools.partial(on_keyrelease,listbox=listbox_f,list=dirlist))
+filename_entry.bind('<KeyRelease>', functools.partial(on_keyrelease,listbox=listbox_filenames,list=dirlist))
 
 
 content.grid(column=0, row=0)
 mainframe.grid(column=0, row=0, columnspan=3, rowspan=3)
 keyword_entry.grid(column=1,row=1)
 keyword_entry_help.grid(column=1,row=2,columnspan=3)
-listbox.grid(column=1,row=3)
+listbox_keywords.grid(column=1,row=3)
 
 filename_entry.grid(column=2,row=1)
-listbox_f.grid(column=2,row=3)
+listbox_filenames.grid(column=2,row=3)
 
 #keyword_entry.focus()
 
