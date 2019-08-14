@@ -10,6 +10,7 @@ import sys, os
 import utils
 from beautifultable import BeautifulTable
 import pandas as pd
+import os.path
 # manipulate a JSON list contained in the xattr called pyXattr
 # keep track of the same in a python dictionary serialized at $KikDeskFile
 
@@ -263,6 +264,7 @@ def main(args):
         #list_tags.reverse()
         table = BeautifulTable()
         three_days_ago=datetime.datetime.now() - datetime.timedelta(days=recent_days)
+
         for row in list_tags:
 
             d = datetime.datetime.fromtimestamp(float(row[1]))
@@ -272,10 +274,23 @@ def main(args):
                 _date_format=long_date_format
             date_string = d.strftime(_date_format)
 
+            if not os.path.isfile(row[2]):
+                print(row[2], ' does not exist')
+            #figure relative paths - inconsistent, abort!
+
+            if '..' in row[2]:
+                print(row[2], ' is a relative path')
+
+
+
+            #print(row[2].split('/')[-1])
+
             if row[2] == filename or len(filename)==0: #comparing absolute paths
                 table.append_row([row[0],date_string])
         if not short_listing:
             print(table)
+\
+
         else:
             p_Table=pd.DataFrame(table)
             print(p_Table.info())
