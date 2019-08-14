@@ -275,7 +275,7 @@ def main(args):
             date_string = d.strftime(_date_format)
 
             if not os.path.isfile(row[2]):
-                print(row[2], ' does not exist')
+                pass#print(row[2], ' does not exist')
             #figure relative paths - inconsistent, abort!
 
             if '..' in row[2]:
