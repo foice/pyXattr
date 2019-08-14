@@ -39,7 +39,7 @@ def serialize_dict_to_file_as_json(_emptydic,KikDeskFile):
         json.dump(_emptydic, outfile)
 
 def list_tags_in_reverse_time(current_kikdb):
-    tags_times=[ [ [ tag["tag"], tag["time"] ] for tag in get_tags_from_kik(kiks) ] for filekey, kiks in current_kikdb.items() ]
+    tags_times=[ [ [ tag["tag"], tag["time"], filekey ] for tag in get_tags_from_kik(kiks) ] for filekey, kiks in current_kikdb.items() ]
     faltlist=utils.flattenOnce(tags_times)
     return utils.sort_by_ith(faltlist,1)
 
@@ -264,13 +264,16 @@ def main(args):
         table = BeautifulTable()
         three_days_ago=datetime.datetime.now() - datetime.timedelta(days=recent_days)
         for row in list_tags:
+
             d = datetime.datetime.fromtimestamp(float(row[1]))
             _date_format=short_date_format
 
             if d>three_days_ago:
                 _date_format=long_date_format
             date_string = d.strftime(_date_format)
-            table.append_row([row[0],date_string])
+
+            if row[2] == filename or len(filename)==0: #comparing absolute paths
+                table.append_row([row[0],date_string])
         if not short_listing:
             print(table)
         else:
