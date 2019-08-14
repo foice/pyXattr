@@ -289,7 +289,6 @@ def main(args):
                 table.append_row([row[0],date_string])
         if not short_listing:
             print(table)
-\
 
         else:
             p_Table=pd.DataFrame(table)
