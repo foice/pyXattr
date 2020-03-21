@@ -110,7 +110,10 @@ text=\
 ? matches any single character,  \
 [seq] matches any character in seq,  \
 [!seq] matches any character not in seq\n \
-e.g. type "*Weinberg*" to search for anything containing "Weinberg"')
+e.g. type "*Weinberg*" to search for anything containing "Weinberg"\n \
+\n \
+The names starting with G: are names of Bibdesk static groups.\n \
+They can have been created issuing ./bibgroups2keywords.py -b myfile.bib -k -a')
 
 #ttk.Button(mainframe, text="Add", command=add).grid(column=2, row=2, sticky=W)
 listbox_filenames = Listbox(content,width=80,height=100)
@@ -133,7 +136,7 @@ keyword_entry_help.grid(column=1,row=2,columnspan=3)
 listbox_keywords.grid(column=1,row=3)
 
 filename_entry.grid(column=2,row=1)
-listbox_filenames.grid(column=2,row=3)
+listbox_filenames.grid(column=2,row=3,sticky=W)
 
 #keyword_entry.focus()
 
