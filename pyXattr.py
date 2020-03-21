@@ -209,6 +209,7 @@ def main(args):
     short_listing=args.short
     m_time=args.mtime
     bibitem=args.bibitem
+    search_string=args.search
     grow=len(args.add_tag)
     shrink=len(args.remove_tag)
     tags=""
@@ -287,14 +288,22 @@ def main(args):
             #print(row[2].split('/')[-1])
 
             if row[2] == filename or len(filename)==0: #comparing absolute paths
-                table.append_row([row[0],date_string])
-        if not short_listing:
+                if len(search_string)==0:
+                    table.append_row([row[0],date_string])
+                else:
+                    if row[0]==search_string:
+                        table.append_row([row[0],date_string])
+                        print(table)
+
+        # ended looping on the tags contained in the file
+        if not short_listing and len(search_string)==0:
             print(table)
 
         else:
-            p_Table=pd.DataFrame(table)
-            print(p_Table.info())
-            return p_Table[0].unique()[::-1]
+            if len(search_string)==0:
+                p_Table=pd.DataFrame(table)
+                print(p_Table.info())
+                return p_Table[0].unique()[::-1]
 
 
 if __name__ == '__main__':
