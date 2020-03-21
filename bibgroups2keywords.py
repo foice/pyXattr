@@ -150,7 +150,10 @@ def xml_lines2dic(xml_groups):
     return _Groups
 
 def main():
-    usage = """Usage: %prog [options]"""
+    usage = """\
+    Usage: %prog [options]\n \
+    ./bibgroups2keywords.py -b myfile.bib -k -a
+    """
     epilog = """
     It can take a bibtex file and make an XML file with the content of the Bibdesk Static Groups.
     It can print the print bibitem of the members of a named group or of all groups. It can print the relative path of a PDF file in a bibitem.
