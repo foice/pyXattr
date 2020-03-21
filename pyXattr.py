@@ -200,6 +200,7 @@ def main(args):
     parser.add_argument("-m", "--mtime", default="", help="epoch time at which to place the time info of the tag")
     parser.add_argument('-l', '--list', default=False, action="store_true", help="list recently used tags putting most revent the bottom of the  list")
     parser.add_argument('-s', '--short', default=False, action="store_true", help="keep list minimal as to pass it to further parsing")
+    parser.add_argument("--search", default="", help="print full table row for the tag matching exactly this string")
     #args = parser.parse_args()
     args = parser.parse_args(args)
     ###################################
