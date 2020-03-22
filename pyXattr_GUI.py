@@ -10,6 +10,11 @@ from subprocess import Popen, PIPE
 import subprocess
 import functools
 import fnmatch
+from pyXattr_utils import *
+
+short_date_format='%Y-%m-%d'
+long_date_format='%Y-%m-%d %H:%M'
+recent_days=3
 
 def listdir_shell(path, lsargs):
     list_command=['ls'] + lsargs + [path]
@@ -78,7 +83,7 @@ def on_select(event,**kwargs):
         modification_date=pyXattr.main(['-l','--search',current_selection_text ])
         #print(modification_date)
         print('---')
-        tag_date.set(str(modification_date))
+        tag_date.set(format_date(modification_date,recent_days=recent_days,short_date_format=short_date_format,         long_date_format=long_date_format) )
 
 def add():
     pass
