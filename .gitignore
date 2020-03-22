@@ -1,6 +1,7 @@
 *.xml
 *.bib
 *.bak
+*.pyc
 myscript.scpt
 path.dec
 path.encoded
