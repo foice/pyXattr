@@ -12,9 +12,16 @@ import functools
 import fnmatch
 from pyXattr_utils import *
 
-short_date_format='%Y-%m-%d'
-long_date_format='%Y-%m-%d %H:%M'
-recent_days=3
+#short_date_format='%Y-%m-%d'
+#long_date_format='%Y-%m-%d %H:%M'
+#recent_days=3
+def load_configuration(json_data):
+    the_dict=load_current_json_as_dict(json_data)
+    globals().update(the_dict)
+    print(the_dict)
+
+load_configuration('config.json')
+
 
 def listdir_shell(path, lsargs):
     list_command=['ls'] + lsargs + [path]
@@ -96,16 +103,29 @@ keywords=pyXattr.main(['-l','-s'])
 
 #print(keywords)
 
-PDFfolders=["/Users/roberto/cernbox/BibDeskPDFs/","/Users/roberto/OneDrive - Universitá Degli Studi Roma Tre/Bibdesk2020"]
+PDFfolders=['/Users/roberto/cernbox/BibDeskPDFs/','/Users/roberto/OneDrive - Universitá Degli Studi Roma Tre/Bibdesk2020']
 
 #PDFfolder="/Users/roberto/cernbox/BibDeskPDFs/"
 dirlist=[]
+dir_df=pd.DataFrame()
 for PDFfolder in PDFfolders:
     print(PDFfolder)
     #dirlist = listdir_shell('/Users/roberto/cernbox/BibDeskPDFs/', ['-t'])
-    ls = subprocess.Popen(["ls", "-t", PDFfolder],                 stdout=subprocess.PIPE)
-    dirlist += [ (item.decode('UTF-8')).strip('\n') for item in ls.stdout ]
-    #print(dirlist)
+    #ls = subprocess.Popen(["ls", "-t", PDFfolder],                 stdout=subprocess.PIPE)
+    #dirlist += [ (item.decode('UTF-8')).strip('\n') for item in ls.stdout ]
+    files = os.listdir( PDFfolder )
+    dirlist+=files
+    ls_files = [ (_file,os.stat(PDFfolder+'/'+_file).st_mtime) for _file in files ]
+    df_files = pd.DataFrame( ls_files    )
+    print(df_files.info())
+    dir_df=pd.concat([dir_df,df_files])
+
+dir_df.columns=['Path','mtime']
+dir_df.sort_values(by='mtime',ascending=False,inplace=True)
+
+print(dir_df.info())
+
+dirlist=dir_df.to_numpy()[:,0]
 
 root = Tk()
 root.title("Knowledge In Keywords `kik` Management")
