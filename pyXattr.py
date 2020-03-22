@@ -11,16 +11,24 @@ import utils
 from beautifultable import BeautifulTable
 import pandas as pd
 import os.path
+from pyXattr_utils import *
 # manipulate a JSON list contained in the xattr called pyXattr
 # keep track of the same in a python dictionary serialized at $KikDeskFile
 
 # TODO
 
+def load_configuration(json_data):
+    the_dict=load_current_json_as_dict(json_data)
+    globals().update(the_dict)
 
 VERSION=0.5
 def DEBUG():
     return False
 debugline="DEBUG: "
+
+load_configuration('config.json')
+print(short_date_format)
+print(long_date_format)
 
 KikDeskFile="/Users/roberto/Dropbox/BibReader/Tags.kik"
 
@@ -29,20 +37,7 @@ short_date_format='%Y-%m-%d'
 long_date_format='%Y-%m-%d %H:%M'
 recent_days=0.5
 
-def load_current_json_kikdeskfile(KikDeskFile):
-    with open(KikDeskFile) as json_data:
-        d = json.load(json_data)
-        #print(d)
-    return d
 
-def serialize_dict_to_file_as_json(_emptydic,KikDeskFile):
-    with open(KikDeskFile, "w") as outfile:
-        json.dump(_emptydic, outfile)
-
-def list_tags_in_reverse_time(current_kikdb):
-    tags_times=[ [ [ tag["tag"], tag["time"], filekey ] for tag in get_tags_from_kik(kiks) ] for filekey, kiks in current_kikdb.items() ]
-    faltlist=utils.flattenOnce(tags_times)
-    return utils.sort_by_ith(faltlist,1)
 
 def get_current_pyXattr(filename):
     son=[]
@@ -265,16 +260,11 @@ def main(args):
         list_tags=list_tags_in_reverse_time(current_kikdb)
         #list_tags.reverse()
         table = BeautifulTable()
-        three_days_ago=datetime.datetime.now() - datetime.timedelta(days=recent_days)
+        #three_days_ago=datetime.datetime.now() - datetime.timedelta(days=recent_days)
 
         for row in list_tags:
 
-            d = datetime.datetime.fromtimestamp(float(row[1]))
-            _date_format=short_date_format
-
-            if d>three_days_ago:
-                _date_format=long_date_format
-            date_string = d.strftime(_date_format)
+            date_string=format_date(row[1],recent_days=3,short_date_format=short_date_format,         long_date_format=long_date_format)
 
             if not os.path.isfile(row[2]):
                 pass#print(row[2], ' does not exist')
