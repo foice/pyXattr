@@ -294,6 +294,7 @@ def main(args):
                     if row[0]==search_string:
                         table.append_row([row[0],date_string])
                         print(table)
+                        return row[1]
 
         # ended looping on the tags contained in the file
         if not short_listing and len(search_string)==0:
