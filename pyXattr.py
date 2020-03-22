@@ -20,43 +20,20 @@ from pyXattr_utils import *
 def load_configuration(json_data):
     the_dict=load_current_json_as_dict(json_data)
     globals().update(the_dict)
+    print(the_dict)
 
 VERSION=0.5
-def DEBUG():
-    return False
-debugline="DEBUG: "
+
 
 load_configuration('config.json')
-print(short_date_format)
-print(long_date_format)
 
-KikDeskFile="/Users/roberto/Dropbox/BibReader/Tags.kik"
+
 
 #### output format and options ####
-short_date_format='%Y-%m-%d'
-long_date_format='%Y-%m-%d %H:%M'
-recent_days=0.5
+#short_date_format='%Y-%m-%d'
+#long_date_format='%Y-%m-%d %H:%M'
+#recent_days=0.5
 
-
-
-def get_current_pyXattr(filename):
-    son=[]
-    try:
-        res = subprocess.check_output(["xattr", "-p", "pyXattr", str(filename)])
-        #res is stdout. it has 0 lines when the attribute is missing, because then we only have stderr
-        lines=res.splitlines()
-        if len(lines)==0:
-            son=[]
-        elif len(lines)==1:
-            son = json.loads(lines[0])
-            if DEBUG(): print( debugline, "current jpyXattr: ", son)
-        else:
-            print( "too many lines")
-            sys.exit()
-    except subprocess.CalledProcessError:
-        son=[]
-
-    return son
 
 class optionsSet():
     """just a data structure to move around options that affect the behaviour of the program"""
@@ -71,111 +48,6 @@ class kikData():
         self.bibitem = ""
         self.mtime = ""
 
-def get_tags_from_kik(kik_set):
-    result=[]
-    for element in kik_set:
-        try:
-            if len(element["tag"])>0:
-                result.append(element)
-        except KeyError:
-            if DEBUG(): print( debugline, element, " was not a tag")
-    return result
-
-def get_bibitem_from_kik(kik_set):
-    result=[]
-    for element in kik_set:
-        try:
-            if len(element["bibitem"])>0:
-                result=element["bibitem"]
-        except KeyError:
-            if DEBUG(): print( debugline, element, " was not a bibitem")
-    return result
-
-
-def check_if_tag_exists(initial_kik_set,tag):
-    initial_tags_set=get_tags_from_kik(initial_kik_set)
-
-    res=0
-    for tt in range(len(initial_tags_set)):
-        if initial_tags_set[tt]["tag"] == tag:
-            res=1
-            print( "tag ", tag, " already present. will not add it again")
-    return res
-
-def extend_tags(initial_kik_set,kik):
-
-    initial_tags_set=get_tags_from_kik(initial_kik_set)
-    initial_bibitem=get_bibitem_from_kik(initial_kik_set)
-
-    #initial_tags_set must be split in the bibitem part and the rest
-    tags=kik.tags
-    _mtime=kik.mtime
-
-    bibitem=""
-    if len(kik.bibitem)>0:
-        bibitem=kik.bibitem
-    elif len(initial_bibitem)>0:
-        bibitem=initial_bibitem
-
-    working_tags_set = initial_tags_set;
-    if _mtime=="":
-        mod_time=datetime.datetime.now()
-    else:
-        mod_time = datetime.datetime.fromtimestamp(float(_mtime))
-
-    human_time = mod_time.strftime("%A, %d. %B %Y %I:%M%p")
-    epoch_time = mod_time.strftime("%s")
-    if len(tags)>0:
-        tags_array=tags.split(",")
-        if DEBUG(): print( debugline, tags_array)
-        for tag in tags_array:
-            clean_tag=utils.remove_multiple_spaces(tag)
-            clean_tag=clean_tag.strip()
-            if check_if_tag_exists(initial_tags_set,clean_tag)==0:
-                _this_tag={}
-                _this_tag["tag"]=clean_tag
-                _this_tag["mtime"]=human_time
-                _this_tag["time"]=epoch_time
-                working_tags_set.append(_this_tag)
-                # add this tag to the registry ...
-    if len(bibitem)>0:
-        _this_tag={}
-        _this_tag["bibitem"]=bibitem
-        working_tags_set.append(_this_tag)
-
-    return working_tags_set
-
-def remove_tags(initial_kik_set,kik):
-    initial_tags_set=get_tags_from_kik(initial_kik_set)
-    initial_bibitem=get_bibitem_from_kik(initial_kik_set)
-
-    tags=kik.tags
-
-    bibitem=""
-    if len(kik.bibitem)>0:
-        bibitem=kik.bibitem
-    elif len(initial_bibitem)>0:
-        bibitem=initial_bibitem
-
-    working_tags_set = initial_tags_set;
-    mod_time=datetime.datetime.now()
-    human_time = mod_time.strftime("%A, %d. %B %Y %I:%M%p")
-    epoch_time = mod_time.strftime("%s")
-    if len(tags)>0:
-        tags_array=tags.split(",")
-        if DEBUG(): print( debugline, tags_array)
-        for tag in tags_array:
-            clean_tag=utils.remove_multiple_spaces(tag)
-            clean_tag=clean_tag.strip()
-            if check_if_tag_exists(initial_tags_set,clean_tag)>0:
-                print("... will remove it, instead.")
-                working_tags_set = [ existing_tag for existing_tag in working_tags_set if clean_tag != existing_tag["tag"] ]
-
-    if len(bibitem)>0:
-        _this_tag={}
-        _this_tag["bibitem"]=bibitem
-        working_tags_set.append(_this_tag)
-    return working_tags_set
 
 
 # TODO

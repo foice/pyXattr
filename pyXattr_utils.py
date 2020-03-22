@@ -154,3 +154,22 @@ def remove_tags(initial_kik_set,kik):
         _this_tag["bibitem"]=bibitem
         working_tags_set.append(_this_tag)
     return working_tags_set
+    
+def get_current_pyXattr(filename):
+    son=[]
+    try:
+        res = subprocess.check_output(["xattr", "-p", "pyXattr", str(filename)])
+        #res is stdout. it has 0 lines when the attribute is missing, because then we only have stderr
+        lines=res.splitlines()
+        if len(lines)==0:
+            son=[]
+        elif len(lines)==1:
+            son = json.loads(lines[0])
+            if DEBUG(): print( debugline, "current jpyXattr: ", son)
+        else:
+            print( "too many lines")
+            sys.exit()
+    except subprocess.CalledProcessError:
+        son=[]
+
+    return son
