@@ -1,5 +1,6 @@
 *.xml
 *.bib
+*.bak
 myscript.scpt
 path.dec
 path.encoded
