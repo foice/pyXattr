@@ -24,15 +24,14 @@ def load_configuration(json_data):
 
 VERSION=0.5
 
-
-load_configuration('config.json')
-
-
-
-#### output format and options ####
-#short_date_format='%Y-%m-%d'
-#long_date_format='%Y-%m-%d %H:%M'
-#recent_days=0.5
+try:
+    load_configuration('config.json')
+except FileNotFoundError:
+    #### output format and options ####
+    short_date_format='%Y-%m-%d'
+    long_date_format='%Y-%m-%d %H:%M'
+    recent_days=0.5
+    KikDeskFile="/Users/roberto/Dropbox/BibReader/Tags.kik"
 
 
 class optionsSet():
@@ -131,7 +130,7 @@ def main(args):
         current_kikdb=load_current_json_kikdeskfile(KikDeskFile)
         list_tags=list_tags_in_reverse_time(current_kikdb)
         #list_tags.reverse()
-        table = BeautifulTable()
+        table = BeautifulTable() #for pretty command line output
         #three_days_ago=datetime.datetime.now() - datetime.timedelta(days=recent_days)
 
         for row in list_tags:
