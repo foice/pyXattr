@@ -32,8 +32,12 @@ def serialize_dict_to_file_as_json(_emptydic,KikDeskFile):
 
 def list_tags_in_reverse_time(current_kikdb):
     tags_times=[ [ [ tag["tag"], tag["time"], filekey ] for tag in get_tags_from_kik(kiks) ] for filekey, kiks in current_kikdb.items() ]
-    faltlist=utils.flattenOnce(tags_times)
-    return utils.sort_by_ith(faltlist,1)
+    flatlist=utils.flattenOnce(tags_times)
+    _list=utils.sort_by_ith(flatlist,1)
+    _df=pd.DataFrame(_list,columns=["tag", "time", "filekey"])
+    return _list,_df
+
+
 
 def format_date(row1,recent_days=3,short_date_format='%Y-%m-%d',\
 long_date_format='%Y-%m-%d %H:%M'):
@@ -154,7 +158,7 @@ def remove_tags(initial_kik_set,kik):
         _this_tag["bibitem"]=bibitem
         working_tags_set.append(_this_tag)
     return working_tags_set
-    
+
 def get_current_pyXattr(filename):
     son=[]
     try:
@@ -173,3 +177,28 @@ def get_current_pyXattr(filename):
         son=[]
 
     return son
+
+
+def list_folders(PDFfolders,ascending=False):
+
+    dirlist=[]
+    dir_df=pd.DataFrame()
+    for PDFfolder in PDFfolders:
+        print(PDFfolder)
+        #dirlist = listdir_shell('/Users/roberto/cernbox/BibDeskPDFs/', ['-t'])
+        #ls = subprocess.Popen(["ls", "-t", PDFfolder],                 stdout=subprocess.PIPE)
+        #dirlist += [ (item.decode('UTF-8')).strip('\n') for item in ls.stdout ]
+        files = os.listdir( PDFfolder )
+        #dirlist+=files
+        ls_files = [ (PDFfolder+'/'+_file,_file,os.stat(PDFfolder+'/'+_file).st_mtime) for _file in files ]
+        df_files = pd.DataFrame( ls_files    )
+        print(df_files.info())
+        dir_df=pd.concat([dir_df,df_files])
+
+    dir_df.columns=['Path','filename','mtime']
+    dir_df.sort_values(by='mtime',ascending=ascending,inplace=True)
+
+    print(dir_df.info())
+
+    dirlist=dir_df.to_numpy()[:,0]
+    return dirlist
