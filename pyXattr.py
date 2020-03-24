@@ -128,7 +128,7 @@ def main(args):
 
     if listing:
         current_kikdb=load_current_json_kikdeskfile(KikDeskFile)
-        list_tags=list_tags_in_reverse_time(current_kikdb)
+        list_tags, df_tags = list_tags_in_reverse_time(current_kikdb)
         #list_tags.reverse()
         table = BeautifulTable() #for pretty command line output
         #three_days_ago=datetime.datetime.now() - datetime.timedelta(days=recent_days)
