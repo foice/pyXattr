@@ -162,11 +162,16 @@ def main(args):
         if not short_listing and len(search_string)==0:
             print(table)
 
-        else:
-            if len(search_string)==0:
-                p_Table=pd.DataFrame(table)
-                print(p_Table.info())
+
+        if len(search_string)==0:
+            p_Table=pd.DataFrame(table)
+            print(p_Table.info())
+            try:
                 return p_Table[0].unique()[::-1]
+            except KeyError:
+                return []
+        if len(filename)>0:
+            return list_tags
 
 
 if __name__ == '__main__':
