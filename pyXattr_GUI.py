@@ -11,6 +11,7 @@ import subprocess
 import functools
 import fnmatch
 from pyXattr_utils import *
+from termcolor import colored
 
 #short_date_format='%Y-%m-%d'
 #long_date_format='%Y-%m-%d %H:%M'
@@ -18,10 +19,12 @@ from pyXattr_utils import *
 def load_configuration(json_data):
     the_dict=load_current_json_as_dict(json_data)
     globals().update(the_dict)
-    print(the_dict)
+    print(colored(  "loaded settings from file:" ,'red'))
+    print(colored(the_dict,'red') )
+    return the_dict
 
-load_configuration('config.json')
-
+settings=load_configuration('config.json')
+PDFfolder=settings["PDFfolders"] #=['/Users/roberto/cernbox/BibDeskPDFs/','/Users/roberto/OneDrive - Universita degli Studi Roma Tre/Bibdesk2020']
 
 def listdir_shell(path, lsargs):
     list_command=['ls'] + lsargs + [path]
@@ -71,10 +74,12 @@ def listbox_update(_listbox,data):
     # sorting data
     #data = sorted(data, key=str.lower)
 
-
     # put new data
     for item in data:
         _listbox.insert('end', item)
+
+def _listbox_update(_listbox,data):
+    _listbox.config(listvariable=data)
 
 
 def on_select(event,**kwargs):
@@ -84,13 +89,23 @@ def on_select(event,**kwargs):
     if kwargs['object']=='file':
         print('(event)  current:', current_selection_text)
         print('---')
-        current_files_kiks=pyXattr.main(['-l','-f',PDFfolder+current_selection_text])
-        print(current_files_kiks)
+        current_files_kiks=pyXattr.main(['-l','-f',current_selection_text])
+        if current_files_kiks is None:
+            current_files_kiks=[]
+        print('current_files_kiks(',len(current_files_kiks),'):',current_files_kiks)
+        file_tags.set(tuple(current_files_kiks))
+        search_results_list=current_files_kiks
     if kwargs['object']=='tag':
         modification_date=pyXattr.main(['-l','--search',current_selection_text ])
-        #print(modification_date)
+        print('modification_date:',modification_date)
         print('---')
-        tag_date.set(format_date(modification_date,recent_days=recent_days,short_date_format=short_date_format,         long_date_format=long_date_format) )
+        tag_date.set(format_date(modification_date,recent_days=recent_days,short_date_format=short_date_format, long_date_format=long_date_format) )
+
+
+def populate_file_list(PDFfolders,ascending=False,listbox=None):
+    dirlist=list_folders(PDFfolders,ascending=ascending)
+    listbox_update(listbox,dirlist)
+    return dirlist
 
 def add():
     pass
@@ -101,35 +116,16 @@ def add():
 
 keywords=pyXattr.main(['-l','-s'])
 
-#print(keywords)
-
-PDFfolders=['/Users/roberto/cernbox/BibDeskPDFs/','/Users/roberto/OneDrive - Universitá Degli Studi Roma Tre/Bibdesk2020']
-
-#PDFfolder="/Users/roberto/cernbox/BibDeskPDFs/"
-dirlist=[]
-dir_df=pd.DataFrame()
-for PDFfolder in PDFfolders:
-    print(PDFfolder)
-    #dirlist = listdir_shell('/Users/roberto/cernbox/BibDeskPDFs/', ['-t'])
-    #ls = subprocess.Popen(["ls", "-t", PDFfolder],                 stdout=subprocess.PIPE)
-    #dirlist += [ (item.decode('UTF-8')).strip('\n') for item in ls.stdout ]
-    files = os.listdir( PDFfolder )
-    dirlist+=files
-    ls_files = [ (_file,os.stat(PDFfolder+'/'+_file).st_mtime) for _file in files ]
-    df_files = pd.DataFrame( ls_files    )
-    print(df_files.info())
-    dir_df=pd.concat([dir_df,df_files])
-
-dir_df.columns=['Path','mtime']
-dir_df.sort_values(by='mtime',ascending=False,inplace=True)
-
-print(dir_df.info())
-
-dirlist=dir_df.to_numpy()[:,0]
-
 root = Tk()
 root.title("Knowledge In Keywords `kik` Management")
 root.option_add('*tearOff', FALSE)
+
+ascending_sort_order=BooleanVar()
+#ascending_sort_order = False
+#print(keywords)
+
+
+
 
 content = ttk.Frame(root)
 mainframe = ttk.Frame(content,borderwidth=5, relief="sunken")#, width=1200, height=400)
@@ -137,9 +133,16 @@ mainframe = ttk.Frame(content,borderwidth=5, relief="sunken")#, width=1200, heig
 #root.rowconfigure(0, weight=1)
 
 search_method = StringVar()
-tag_date = StringVar()
-
 search_method = 're'
+
+##########################################
+####### Variables sought in methods ######
+##########################################
+tag_date = StringVar()
+file_tags = StringVar()
+search_results_list = []
+
+
 win = Toplevel(root)
 menubar = Menu(win)
 appmenu = Menu(menubar, name='apple')
@@ -157,6 +160,8 @@ menu_help = Menu(menubar)
 
 menubar.add_cascade(menu=menu_file, label='File')
 menubar.add_cascade(menu=menu_edit, label='Edit')
+menu_edit.add_separator()
+menu_edit.add_checkbutton(label='Ascending/Descending File Sorting', variable=ascending_sort_order, onvalue=True, offvalue=False)
 menubar.add_cascade(menu=menu_search, label='SearchOptions')
 menubar.add_cascade(menu=menu_help, label='Help')
 menu_search.add_separator()
@@ -169,24 +174,15 @@ search_style_label = ttk.Label(content, text='Search style:')
 search_method_label = ttk.Label(content, text='Please select the type of search from the menu')
 search_method_label['textvariable'] = search_method
 
+ascending_sort_order_label = ttk.Label(content, text='Please select the type of sorting from the menu')
+ascending_sort_order_label['textvariable'] = ascending_sort_order
+
 output_date = ttk.Label(content, text='Date of last modification')
 output_date['textvariable'] = tag_date
-####################
-###  TAGS LIST  ####
-####################
-listbox_keywords = Listbox(content,width=30,height=100)
-listbox_keywords.pack()
-##listbox_keywords.bind('<Double-Button-1>', on_select)
-#listbox_keywords.bind('<<ListboxSelect>>', on_select)
-listbox_keywords.bind('<<ListboxSelect>>', functools.partial(on_select,object='tag'))
-listbox_update(listbox_keywords,keywords)
 
-key_word = StringVar()
-
-keyword_entry = ttk.Entry(content,width=30,textvariable=key_word)
-keyword_entry.pack()
-keyword_entry.bind('<KeyRelease>', functools.partial(on_keyrelease,**{'listbox':listbox_keywords,'list':keywords,'method':search_method}) )
-
+output_tags = ttk.Label(content, text='Current tags')
+#output_tags.configure(text="%s%% completed" % percent)
+output_tags['textvariable'] =  file_tags
 
 keyword_entry_help=HTMLLabel(content, html='''
       <head>
@@ -234,42 +230,97 @@ h1 {
         -a</span> </li>
     </ul>
 ''')
+keyword_entry_help.pack()#fill="both", expand=True)
+#keyword_entry_help.fit_height()
+
+
+####################
+###  TAGS LIST  ####
+####################
+
+#tagframe = LabelFrame(content, text="Tags")
+#tagframe.pack(fill="both", expand="yes")
+
+listbox_keywords = Listbox(content,width=30,height=100)
+listbox_keywords.pack()
+##listbox_keywords.bind('<Double-Button-1>', on_select)
+#listbox_keywords.bind('<<ListboxSelect>>', on_select)
+listbox_keywords.bind('<<ListboxSelect>>', functools.partial(on_select,object='tag'))
+listbox_update(listbox_keywords,keywords)
+
+key_word = StringVar()
+
+keyword_entry = ttk.Entry(content,width=30,textvariable=key_word)
+keyword_entry.pack()
+keyword_entry.bind('<KeyRelease>', functools.partial(on_keyrelease,**{'listbox':listbox_keywords,'list':keywords,'method':search_method}) )
+#SearchResultsTitleLabel=HTMLLabel(content, html='''<h1>Search Results</h1>''')
+
+
 
 ####################
 ###  FILE LIST  ####
 ####################
 
+#filesframe = LabelFrame(content, text="Files")
+#filesframe.pack(fill="both", expand="yes")
+
+#scrollbar = Scrollbar(content)
+#scrollbar.pack(side=RIGHT, fill=Y)
+
 #ttk.Button(mainframe, text="Add", command=add).grid(column=2, row=2, sticky=W)
-listbox_filenames = Listbox(content,width=80,height=100)
+listbox_filenames = Listbox(content,width=80,height=100)#,yscrollcommand=scrollbar.set)
 listbox_filenames.pack()
 ##listbox.bind('<Double-Button-1>', on_select)
-listbox_filenames.bind('<<ListboxSelect>>', on_select)
-listbox_update(listbox_filenames,dirlist)
+listbox_filenames.bind('<<ListboxSelect>>', functools.partial(on_select,object='file'))
+#listbox_filenames.config(yscrollcommand=scrollbar.set)
+
+#scrollbar.config(command=listbox_filenames.yview)
+
+populate_file_list(PDFfolders,ascending=ascending_sort_order,listbox=listbox_filenames)
+
+#dirlist =
 
 file_name = StringVar()
 
 filename_entry = ttk.Entry(content,width=80,textvariable=file_name)
 filename_entry.pack()
-filename_entry.bind('<KeyRelease>', functools.partial(on_keyrelease,listbox=listbox_filenames,list=dirlist,method=search_method))
+filename_entry.bind('<KeyRelease>', functools.partial(on_keyrelease,listbox=listbox_filenames,\
+list=populate_file_list(PDFfolders,ascending=ascending_sort_order,listbox=listbox_filenames),method=search_method))
 
+##### Results #####
+
+listbox_results = Listbox(content,width=80,height=50,listvariable=file_tags)
+#listbox_update(listbox_results,search_results_list)
+listbox_results.pack()
+
+results_frame = LabelFrame(content, text="Tags for this file")
+results_frame.pack(expand="yes")
+entry_results = Entry(results_frame,width=60,textvariable=file_tags)
+entry_results.pack()
+write_tags = ttk.Button(results_frame, text='Write Tags', command=None)
+write_tags.pack()
 
 ##########################
 # ASSEMBLY OF THE WINDOW #
 ##########################
 content.grid(column=0, row=0)
-mainframe.grid(column=0, row=0, columnspan=3, rowspan=5) # 3 columns 4 rows
-# row 1
+mainframe.grid(column=0, row=0, columnspan=3, rowspan=6) # 3 columns 4 rows
+# row 1 # display of variables
 search_style_label.grid(column=1,row=1,sticky=E)
 search_method_label.grid(column=2,row=1,sticky=W)
+ascending_sort_order_label.grid(column=3,row=1,sticky=W)
 # row 2
 keyword_entry.grid(column=1,row=2)
 filename_entry.grid(column=2,row=2)
 # row 3
 output_date.grid(column=1,row=3,sticky=N)
-# row 4&5
-listbox_keywords.grid(column=1,row=4,rowspan=2)
-listbox_filenames.grid(column=2,row=4,sticky=W,rowspan=2)
+output_tags.grid(column=2,row=3,sticky=N)
+# row 4&5&6
+listbox_keywords.grid(column=1,row=4,rowspan=3)
+listbox_filenames.grid(column=2,row=4,sticky=W,rowspan=3)
 keyword_entry_help.grid(column=3,row=4,sticky=N,rowspan=1)
+results_frame.grid(column=3,row=5)
+listbox_results.grid(column=3,row=6,sticky=N,rowspan=1)
 
 keyword_entry.focus()
 
