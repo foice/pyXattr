@@ -30,7 +30,7 @@ def load_configuration(json_data,DEBUG=False):
 
 settings=load_configuration('config.json')
 PDFfolders=settings["PDFfolders"] # it reads one char at a time
-PDFfolders=["/Users/roberto/cernbox/BibDeskPDFs/"] #,'\"/Users/roberto/OneDrive - Universita degli Studi Roma Tre/Bibdesk2020\"']
+#PDFfolders=["/Users/roberto/cernbox/BibDeskPDFs/"] #,'\"/Users/roberto/OneDrive - Universita degli Studi Roma Tre/Bibdesk2020\"']
 for _d in PDFfolders:
   print(colored(_d,'green'))
 
