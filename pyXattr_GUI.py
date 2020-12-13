@@ -181,6 +181,10 @@ menu_search.add_checkbutton(label='Unix/Regular Expression', variable=search_met
 #menu_search.add_radiobutton(label='Unix', variable=search_method, value='unix')
 #menu_search.add_radiobutton(label='Regular Expression', variable=search_method, value='re')
 
+#####################
+#      LABELS
+#####################
+
 search_style_label = ttk.Label(content, text='Search style:')
 search_method_label = ttk.Label(content, text='Please select the type of search from the menu')
 search_method_label['textvariable'] = search_method
@@ -194,6 +198,10 @@ output_date['textvariable'] = tag_date
 output_tags = ttk.Label(content, text='Current tags')
 #output_tags.configure(text="%s%% completed" % percent)
 output_tags['textvariable'] =  file_tags
+
+#####################
+#    HELP ELEMENT
+#####################
 
 keyword_entry_help=HTMLLabel(content, html='''
       <head>
@@ -241,7 +249,10 @@ h1 {
         -a</span> </li>
     </ul>
 ''')
-keyword_entry_help.pack()#fill="both", expand=True)
+keyword_entry_help.grid(column=0, row=0)
+# .grid(column=0, row=0)  [](https://stackoverflow.com/questions/23584325/cannot-use-geometry-manager-pack-inside)
+
+#fill="both", expand=True)
 #keyword_entry_help.fit_height()
 
 
@@ -253,7 +264,7 @@ keyword_entry_help.pack()#fill="both", expand=True)
 #tagframe.pack(fill="both", expand="yes")
 
 listbox_keywords = Listbox(content,width=30,height=100)
-listbox_keywords.pack()
+listbox_keywords.grid(column=0, row=0)
 ##listbox_keywords.bind('<Double-Button-1>', on_select)
 #listbox_keywords.bind('<<ListboxSelect>>', on_select)
 listbox_keywords.bind('<<ListboxSelect>>', functools.partial(on_select,object='tag'))
@@ -262,7 +273,7 @@ listbox_update(listbox_keywords,keywords)
 key_word = StringVar()
 
 keyword_entry = ttk.Entry(content,width=30,textvariable=key_word)
-keyword_entry.pack()
+keyword_entry.grid(column=0, row=0)
 keyword_entry.bind('<KeyRelease>', functools.partial(on_keyrelease,**{'listbox':listbox_keywords,'list':keywords,'method':search_method}) )
 #SearchResultsTitleLabel=HTMLLabel(content, html='''<h1>Search Results</h1>''')
 
@@ -280,7 +291,7 @@ keyword_entry.bind('<KeyRelease>', functools.partial(on_keyrelease,**{'listbox':
 
 #ttk.Button(mainframe, text="Add", command=add).grid(column=2, row=2, sticky=W)
 listbox_filenames = Listbox(content,width=80,height=100)#,yscrollcommand=scrollbar.set)
-listbox_filenames.pack()
+listbox_filenames.grid(column=0, row=0)
 ##listbox.bind('<Double-Button-1>', on_select)
 listbox_filenames.bind('<<ListboxSelect>>', functools.partial(on_select,object='file'))
 #listbox_filenames.config(yscrollcommand=scrollbar.set)
@@ -294,7 +305,7 @@ populate_file_list(PDFfolders,ascending=ascending_sort_order,listbox=listbox_fil
 file_name = StringVar()
 
 filename_entry = ttk.Entry(content,width=80,textvariable=file_name)
-filename_entry.pack()
+filename_entry.grid(column=0, row=0)
 filename_entry.bind('<KeyRelease>', functools.partial(on_keyrelease,listbox=listbox_filenames,\
       list=populate_file_list(PDFfolders,ascending=ascending_sort_order,listbox=listbox_filenames),method=search_method))
 
@@ -302,14 +313,14 @@ filename_entry.bind('<KeyRelease>', functools.partial(on_keyrelease,listbox=list
 
 listbox_results = Listbox(content,width=80,height=50,listvariable=file_tags)
 #listbox_update(listbox_results,search_results_list)
-listbox_results.pack()
+listbox_results.grid(column=0, row=0)
 
 results_frame = LabelFrame(content, text="Tags for this file")
-results_frame.pack(expand="yes")
+results_frame.grid(column=0, row=0)#.pack(expand="yes")
 entry_results = Entry(results_frame,width=60,textvariable=file_tags)
-entry_results.pack()
+entry_results.grid(column=0, row=0)
 write_tags = ttk.Button(results_frame, text='Write Tags', command=None)
-write_tags.pack()
+write_tags.grid(column=0, row=0)
 
 ##########################
 # ASSEMBLY OF THE WINDOW #
