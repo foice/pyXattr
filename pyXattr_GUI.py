@@ -13,18 +13,27 @@ import fnmatch
 from pyXattr_utils import *
 from termcolor import colored
 
+
+print(colored("Tk version: "+str(TkVersion),'cyan'))
+
+
 #short_date_format='%Y-%m-%d'
 #long_date_format='%Y-%m-%d %H:%M'
 #recent_days=3
-def load_configuration(json_data):
+def load_configuration(json_data,DEBUG=False):
     the_dict=load_current_json_as_dict(json_data)
     globals().update(the_dict)
-    print(colored(  "loaded settings from file:" ,'red'))
-    print(colored(the_dict,'red') )
+    if DEBUG:
+      print(colored(  "loaded settings from file:" ,'red'))
+      print(colored(the_dict,'red') )
     return the_dict
 
 settings=load_configuration('config.json')
-PDFfolder=settings["PDFfolders"] #=['/Users/roberto/cernbox/BibDeskPDFs/','/Users/roberto/OneDrive - Universita degli Studi Roma Tre/Bibdesk2020']
+PDFfolders=settings["PDFfolders"] # it reads one char at a time
+PDFfolders=["/Users/roberto/cernbox/BibDeskPDFs/"] #,'\"/Users/roberto/OneDrive - Universita degli Studi Roma Tre/Bibdesk2020\"']
+for _d in PDFfolders:
+  print(colored(_d,'green'))
+
 
 def listdir_shell(path, lsargs):
     list_command=['ls'] + lsargs + [path]
@@ -102,7 +111,9 @@ def on_select(event,**kwargs):
         tag_date.set(format_date(modification_date,recent_days=recent_days,short_date_format=short_date_format, long_date_format=long_date_format) )
 
 
-def populate_file_list(PDFfolders,ascending=False,listbox=None):
+def populate_file_list(PDFfolders:list,ascending=False,listbox=None,DEBUG=True):
+    if DEBUG:
+      print('PDFfolders ', PDFfolders,' type:', type(PDFfolders))
     dirlist=list_folders(PDFfolders,ascending=ascending)
     listbox_update(listbox,dirlist)
     return dirlist
@@ -285,7 +296,7 @@ file_name = StringVar()
 filename_entry = ttk.Entry(content,width=80,textvariable=file_name)
 filename_entry.pack()
 filename_entry.bind('<KeyRelease>', functools.partial(on_keyrelease,listbox=listbox_filenames,\
-list=populate_file_list(PDFfolders,ascending=ascending_sort_order,listbox=listbox_filenames),method=search_method))
+      list=populate_file_list(PDFfolders,ascending=ascending_sort_order,listbox=listbox_filenames),method=search_method))
 
 ##### Results #####
 
