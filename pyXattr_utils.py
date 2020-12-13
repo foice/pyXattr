@@ -11,6 +11,7 @@ import utils
 from beautifultable import BeautifulTable
 import pandas as pd
 import os.path
+from termcolor import colored
 
 def DEBUG():
     return False
@@ -179,26 +180,30 @@ def get_current_pyXattr(filename):
     return son
 
 
-def list_folders(PDFfolders,ascending=False):
+def list_folders(PDFfolders:list,ascending=False,DEBUG=True):
 
-    dirlist=[]
-    dir_df=pd.DataFrame()
-    for PDFfolder in PDFfolders:
-        print(PDFfolder)
-        #dirlist = listdir_shell('/Users/roberto/cernbox/BibDeskPDFs/', ['-t'])
-        #ls = subprocess.Popen(["ls", "-t", PDFfolder],                 stdout=subprocess.PIPE)
-        #dirlist += [ (item.decode('UTF-8')).strip('\n') for item in ls.stdout ]
-        files = os.listdir( PDFfolder )
-        #dirlist+=files
-        ls_files = [ (PDFfolder+'/'+_file,_file,os.stat(PDFfolder+'/'+_file).st_mtime) for _file in files ]
-        df_files = pd.DataFrame( ls_files    )
-        print(df_files.info())
-        dir_df=pd.concat([dir_df,df_files])
+    if isinstance(PDFfolders,list):
+        dirlist=[]
+        dir_df=pd.DataFrame()
+        for PDFfolder in PDFfolders:
+            if DEBUG:
+                print(colored(PDFfolder,'green'))
+            #dirlist = listdir_shell('/Users/roberto/cernbox/BibDeskPDFs/', ['-t'])
+            #ls = subprocess.Popen(["ls", "-t", PDFfolder],                 stdout=subprocess.PIPE)
+            #dirlist += [ (item.decode('UTF-8')).strip('\n') for item in ls.stdout ]
+            files = os.listdir( str(PDFfolder) )
+            #dirlist+=files
+            ls_files = [ (PDFfolder+'/'+_file,_file,os.stat(PDFfolder+'/'+_file).st_mtime) for _file in files ]
+            df_files = pd.DataFrame( ls_files    )
+            print(df_files.info())
+            dir_df=pd.concat([dir_df,df_files])
 
-    dir_df.columns=['Path','filename','mtime']
-    dir_df.sort_values(by='mtime',ascending=ascending,inplace=True)
+        dir_df.columns=['Path','filename','mtime']
+        dir_df.sort_values(by='mtime',ascending=ascending,inplace=True)
 
-    print(dir_df.info())
+        print(dir_df.info())
 
-    dirlist=dir_df.to_numpy()[:,0]
-    return dirlist
+        dirlist=dir_df.to_numpy()[:,0]
+        return dirlist
+    else:
+        print(colored('the input of list_folders must be a list, not '+str(type(PDFfolders)),'red'))
