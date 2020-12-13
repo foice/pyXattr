@@ -147,8 +147,12 @@ def main(args):
 
 
             #print(row[2].split('/')[-1])
-
-            if row[2] == filename or len(filename)==0: #comparing absolute paths
+            ############################
+            ####### FOR THIS TAG #######
+            ############################
+            # if searching for a tag return its modification date
+            # if the sought filename was found
+            if row[2] == filename or len(filename)==0: # comparing absolute paths in case a filename was provided
                 if len(search_string)==0:
                     table.append_row([row[0],date_string])
                 else:
