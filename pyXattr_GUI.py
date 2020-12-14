@@ -12,7 +12,7 @@ import functools
 import fnmatch
 from pyXattr_utils import *
 from termcolor import colored
-
+from pathlib import Path
 
 print(colored("Tk version: "+str(TkVersion),'cyan'))
 
@@ -76,7 +76,7 @@ def on_keyrelease(event,**kwargs):
     listbox_update(kwargs['listbox'],data)
 
 
-def listbox_update(_listbox,data):
+def listbox_update(_listbox,data,manipulation=None):
     # delete previous data
     _listbox.delete(0, 'end')
 
@@ -85,7 +85,12 @@ def listbox_update(_listbox,data):
 
     # put new data
     for item in data:
-        _listbox.insert('end', item)
+        if manipulation is None:
+          _item = item
+        else:
+          _item=manipulation(item)
+        _listbox.insert('end', _item)
+
 
 def _listbox_update(_listbox,data):
     _listbox.config(listvariable=data)
@@ -114,7 +119,7 @@ def on_select(event,**kwargs):
 def populate_file_list(PDFfolders:list,ascending=False,listbox=None,DEBUG=True):
     if DEBUG:
       print('PDFfolders ', PDFfolders,' type:', type(PDFfolders))
-    dirlist=list_folders(PDFfolders,ascending=ascending)
+    dirlist=list_folders(PDFfolders,ascending=ascending,fullpath=True)
     listbox_update(listbox,dirlist)
     return dirlist
 
