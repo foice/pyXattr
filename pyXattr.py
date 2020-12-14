@@ -154,16 +154,10 @@ def main(args):
             # if the sought filename was found
             if row[2] == filename or len(filename)==0: # comparing absolute paths in case a filename was provided
                 if len(search_string)==0:
-                    #table.append_row([row[0],date_string])
                     table.rows.append([row[0],date_string])
-                    # TODO
-                    #  'BeautifulTable.append_row' has been deprecated in 'v1.0.0' and will be removed in 'v1.2.0'. Use 'BTRowCollection.append' instead. 
                 else:
                     if row[0]==search_string:
-                        #table.append_row([row[0],date_string])
                         table.rows.append([row[0],date_string])
-                        # TODO
-                        #  'BeautifulTable.append_row' has been deprecated in 'v1.0.0' and will be removed in 'v1.2.0'. Use 'BTRowCollection.append' instead.
                         print(table)
                         return row[1]
 
