@@ -180,7 +180,7 @@ def get_current_pyXattr(filename):
     return son
 
 
-def list_folders(PDFfolders:list,ascending=False,DEBUG=True):
+def list_folders(PDFfolders:list,ascending=False,DEBUG=True,fullpath=True,pandas_output=False,np_output=False):
 
     if isinstance(PDFfolders,list):
         dirlist=[]
@@ -201,9 +201,19 @@ def list_folders(PDFfolders:list,ascending=False,DEBUG=True):
         dir_df.columns=['Path','filename','mtime']
         dir_df.sort_values(by='mtime',ascending=ascending,inplace=True)
 
+        print(colored(dir_df.head(),'red'))
+
         print(dir_df.info())
 
-        dirlist=dir_df.to_numpy()[:,0]
-        return dirlist
+        if fullpath:
+            dirlist=dir_df.to_numpy()[:,0]
+            return dirlist
+        if pandas_output:
+            return dir_df
+        if np_output:
+            _df_np=dir_df.to_numpy()
+            return _df_np
+           
+
     else:
         print(colored('the input of list_folders must be a list, not '+str(type(PDFfolders)),'red'))

@@ -4,7 +4,8 @@
 
 
 TO DO
-- visualize only the file name
+- visualize only the file name (possible via  list_folders(PDFfolders:list,ascending=False,DEBUG=True,fullpath=False))
+    - need to keep the path to pass it to `pyXattr`
 - visualize the filename on multiple rows as necessary
 
 

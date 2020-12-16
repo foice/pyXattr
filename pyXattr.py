@@ -49,7 +49,7 @@ class kikData():
 
 
 
-# TODO
+# TODO v1
 # option to use this script that implies the same operation is done on OS X tags usings
 # tag -a file
 # tag -r file
@@ -87,7 +87,8 @@ def main(args):
     ###################################
 
     if (len(filename)>0):
-        #get the current tag value. it is a is a list of dictionaries
+        # get the current xattr value from the file. 
+        # it is a is a list of dictionaries
         initial_kik_set = get_current_pyXattr(filename)
     if len(tags)>0: # is the same as saying -a or -d  was provided
         kik=kikData()
