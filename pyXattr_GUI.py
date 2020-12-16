@@ -46,34 +46,37 @@ def listdir_shell(path, lsargs):
 
 def on_keyrelease(event,**kwargs):
 
-    #print(kwargs)
-    # get text from entry
-    value = event.widget.get()
-    value = value.strip().lower()
+  #print(kwargs)
+  # get text from entry
+  value = event.widget.get()
+  value = value.strip().lower()
 
-    # get data from list
-    if value == '':
-        data = kwargs['list']
-    else:
-        data = []
-        for item in kwargs['list']:
-            # Unix shell-style wildcards (which are not the same as regular expressions!)
-            # https://docs.python.org/3/library/fnmatch.html
-            if kwargs['method']=='unix':
-                if len(fnmatch.filter([item.lower()],value.lower()))>0 :
-                    # search Pattern
-                    data.append(item)
-            if kwargs['method']=='re':
-                import re
-                reg_exp=value
-                m = re.search(reg_exp, item.lower())
-                if m is not None:
-                    # search Pattern
-                    data.append(item)
-
-
-    # update data in listbox
-    listbox_update(kwargs['listbox'],data)
+  # get data from list
+  if len(value) <= 3:
+      data = kwargs['list']
+  else:
+      data = []
+      indexes=[]
+      for _i_,item in enumerate(kwargs['list']):
+          # Unix shell-style wildcards (which are not the same as regular expressions!)
+          # https://docs.python.org/3/library/fnmatch.html
+          if kwargs['method']=='unix':
+              if len(fnmatch.filter([item.lower()],value.lower()))>0 :
+                  # search Pattern
+                  data.append(item)
+                  indexes.append(_i_)
+          if kwargs['method']=='re':
+              import re
+              reg_exp=value
+              m = re.search(reg_exp, item.lower())
+              if m is not None:
+                  # search Pattern
+                  data.append(item)
+                  indexes.append(_i_)
+  return indexes  
+  # update data in listbox
+  # listbox_update(kwargs['listbox'],data)
+  # global_status_data=data
 
 
 def listbox_update(_listbox,data,manipulation=None):
@@ -86,10 +89,13 @@ def listbox_update(_listbox,data,manipulation=None):
     # put new data
     for item in data:
         if manipulation is None:
-          _item = item
+          _listbox.insert('end', item )
         else:
-          _item=manipulation(item)
-        _listbox.insert('end', _item)
+          if manipulation=='filename':
+            print(colored('doing the manipulation','red'))
+            _listbox.insert('end', Path(item).name )
+          else:
+            _listbox.insert('end', manipulation(item) )
 
 
 def _listbox_update(_listbox,data):
@@ -98,10 +104,13 @@ def _listbox_update(_listbox,data):
 
 def on_select(event,**kwargs):
     # display element selected on list
-    current_selection_text=event.widget.get(event.widget.curselection())
+    current_selection_list = event.widget.curselection()
+    current_selection_text = event.widget.get(event.widget.curselection())
+ 
+
     print('(event) previous:', event.widget.get('active'))
     if kwargs['object']=='file':
-        print('(event)  current:', current_selection_text)
+        print('(event)  current:', current_selection_text,' position: ',current_selection_list[0])
         print('---')
         current_files_kiks=pyXattr.main(['-l','-f',current_selection_text])
         if current_files_kiks is None:
@@ -116,12 +125,12 @@ def on_select(event,**kwargs):
         tag_date.set(format_date(modification_date,recent_days=recent_days,short_date_format=short_date_format, long_date_format=long_date_format) )
 
 
-def populate_file_list(PDFfolders:list,ascending=False,listbox=None,DEBUG=True):
+def populate_file_list(PDFfolders:list,ascending=False,listbox=None,DEBUG=True,manipulation=None):
     if DEBUG:
       print('PDFfolders ', PDFfolders,' type:', type(PDFfolders))
-    dirlist=list_folders(PDFfolders,ascending=ascending,fullpath=True)
-    listbox_update(listbox,dirlist)
-    return dirlist
+    list_of_fullpaths=list_folders(PDFfolders,ascending=ascending,fullpath=True)
+    listbox_update(listbox,list_of_fullpaths,manipulation=manipulation)
+    return list_of_fullpaths
 
 def add():
     pass
@@ -208,52 +217,46 @@ output_tags['textvariable'] =  file_tags
 #    HELP ELEMENT
 #####################
 
-keyword_entry_help=HTMLLabel(content, html='''
-      <head>
-    <style>
 
-.code {
-  background-color: LightGray;
-}
+from bs4 import BeautifulSoup
+import cssutils
+from tk_html_widgets import HTMLLabel, HTMLScrolledText
 
-body {
-  background-color: linen;
-}
+# get a HTML string from file
+#############################
+help_doc="GUI_HELP.html"  #from head to the end
+help_doc_filehandle = open(help_doc, "r")
+soup = BeautifulSoup(help_doc_filehandle, 'html.parser')
+print(soup)
+#############################
 
-h1 {
-  color: maroon;
-  margin-left: 40px;
-}
-</style> <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-    <title></title>
-  </head>
-  <body>
-    <h1>Search syntax</h1>
-    <h3> Unix-style: </h3>
-    <ul>
-      <li> <span class="code">*</span> matches everything,</li>
-      <li><span class="code">[seq] </span> matches any
-        character in seq</li>
-      <li><span class="code">[!seq]</span> matches any character not in seq </li>
-    </ul>
-    <ul>
-      e.g. type <span class="code">*Weinberg*</span> to search for anything containing "Weinberg"
-    </ul>
-    <p></p>
-    <h3> Regulars expressions:</h3>
-    <p><a href="https://docs.python.org/3/library/re.html#module-re">
-        https://docs.python.org/3/library/re.html\#module-re&nbsp;</a></p>
-    <ul>
-      For example, <span class="code">Isaac (?!Asimov)</span> will match "Isaac " only if it is not
-      followed by "Asimov".
-    </ul>
-    <h1> Tags Notation:</h1>
-    <ul>
-      <li>The names starting with G: are names of Bibdesk static groups. They
-        can have been created issuing <span class="code">./bibgroups2keywords.py -b myfile.bib -k
-        -a</span> </li>
-    </ul>
-''')
+# get a dictionary form the CSS string in HTML string
+#############################
+style_string = soup.style.decode_contents()
+style_dictionary = {}
+sheet = cssutils.parseString(style_string)
+for rule in sheet:
+    selector = rule.selectorText
+    styles = rule.style.cssText
+    style_dictionary[selector] = styles
+#############################
+
+# get styled HTML from original HTML string
+#############################
+styled_html=soup.body.decode_contents()
+for key,value in style_dictionary.items():
+  old="class=\""+key.replace(".","")+"\""
+  new="style=\""+value+";\""
+  print( colored("DEBUG:",'red') , old , '->' , new )
+  styled_html=styled_html.replace(old, new) 
+#############################
+  print(styled_html)
+
+keyword_entry_help=HTMLScrolledText(content, 
+  html=styled_html)
+  #html='<li> <span style="background-color: LightGray;">*</span> matches everything,</li>')
+  # html="<li><span style=\"background-color: LightGray;\">[!seq]</span> matches any character not in seq </li>")
+  #html=soup.decode_contents())
 keyword_entry_help.grid(column=0, row=0)
 # .grid(column=0, row=0)  [](https://stackoverflow.com/questions/23584325/cannot-use-geometry-manager-pack-inside)
 
@@ -284,38 +287,144 @@ keyword_entry.bind('<KeyRelease>', functools.partial(on_keyrelease,**{'listbox':
 
 
 
-####################
-###  FILE LIST  ####
-####################
-
 #filesframe = LabelFrame(content, text="Files")
 #filesframe.pack(fill="both", expand="yes")
 
 #scrollbar = Scrollbar(content)
 #scrollbar.pack(side=RIGHT, fill=Y)
-
 #ttk.Button(mainframe, text="Add", command=add).grid(column=2, row=2, sticky=W)
+
+##listbox.bind('<Double-Button-1>', on_select)
+#listbox_filenames.config(yscrollcommand=scrollbar.set)
+#scrollbar.config(command=listbox_filenames.yview)
+#populate_file_list(PDFfolders,ascending=ascending_sort_order,listbox=listbox_filenames,manipulation="filename" )
+
+
+
+####################
+###  FILE LIST  ####
+####################
+
+
+##### listbox_filenames = Listbox(content,width=80,height=100)#,yscrollcommand=scrollbar.set)
+#####listbox_filenames.grid(column=0, row=0)
+##### listbox_filenames.bind('<<ListboxSelect>>', functools.partial(on_select,listbox=listbox_filenames,object='file'))
+
+
+##### file_name = StringVar()
+
+##### filename_entry = ttk.Entry(content,width=80,textvariable=file_name)
+##### filename_entry.grid(column=0, row=0)
+##### filename_entry.bind('<KeyRelease>', functools.partial(on_keyrelease,listbox=listbox_filenames,\
+#####      list=populate_file_list(PDFfolders,ascending=ascending_sort_order,listbox=listbox_filenames,manipulation=lambda x: Path(x).name )\
+#####        ,method=search_method))
+##### filename_entry.bind('<KeyRelease>', functools.partial(on_keyrelease,listbox=listbox_filenames,\
+#####      list=populate_file_list(PDFfolders,ascending=ascending_sort_order,listbox=listbox_filenames,manipulation=lambda x: Path(x).name )\
+#####        ,method=search_method))
+
+
+#########################
+###  NEW FILE LIST   ####
+#########################
+# obtain the two lists paths,filenames
+
+
+def filter_list(value,method,list_):
+  data = []
+  indexes=[]
+  for _i_,item in enumerate(list_):
+      
+      # Unix shell-style wildcards (which are not the same as regular expressions!)
+      # https://docs.python.org/3/library/fnmatch.html
+      if method=='unix':
+        print(item)
+        import fnmatch
+        if len(fnmatch.filter([item.lower()],value.lower()))>0 :
+            # search Pattern
+            data.append(item)
+            indexes.append(_i_)
+      if method=='re':
+        import re
+        reg_exp=value
+        m = re.search(reg_exp, item.lower())
+        if m is not None:
+          # search Pattern
+          data.append(item)
+          indexes.append(_i_)
+  return indexes,data
+
+
+def fetch_paths_fnames():
+  orig_paths = list_folders(PDFfolders,ascending=ascending_sort_order,fullpath=True)
+  orig_fnames = [  Path(p).name for p in orig_paths ]
+  return orig_paths, orig_fnames
+
+def reset_file_list():
+  global current_paths
+  global current_fnames
+  current_paths ,  current_fnames = fetch_paths_fnames() # should be global
+
+
+_p , _f = fetch_paths_fnames()
+
+current_paths = _p
+current_fnames = _f
+
+def update_files_list(current_fnames):
+  listbox_filenames.delete(0, 'end')
+  listbox_filenames.insert('end', *current_fnames )
+
+def on_select_sync(event):
+  current_selection_list = event.widget.curselection()
+  current_selection_text = event.widget.get(event.widget.curselection())
+  print( colored( current_fnames[current_selection_list[0]] , "blue") )
+  print(  colored( current_paths[current_selection_list[0]] , "cyan") )
+
+def on_keyrelease_sync(event,**kwargs):
+  global current_fnames
+  global current_paths
+
+  #print(kwargs)
+  # get text from entry
+  value = event.widget.get()
+  value = value.strip().lower()
+
+  # get data from list
+  if len(value) <= 3:
+    print(colored('less than 4 chars, doing nothing','yellow'))
+  else:
+    print(colored('working on ','yellow'),colored(value,'red'))
+    filtered_indexes, filtered_fnames = filter_list(value,kwargs['method'],current_fnames)
+    current_paths = [ current_paths[i] for i in filtered_indexes]
+    
+    current_fnames = [ current_fnames[i] for i in filtered_indexes]
+    update_files_list(current_fnames)
+
+
+  if value=='':
+    print(colored('returning to original list','green'))
+    reset_file_list()
+    update_files_list(current_fnames)
+
+
+reset_file_list() # act on global current_paths , current_fnames 
+
 listbox_filenames = Listbox(content,width=80,height=100)#,yscrollcommand=scrollbar.set)
 listbox_filenames.grid(column=0, row=0)
-##listbox.bind('<Double-Button-1>', on_select)
-listbox_filenames.bind('<<ListboxSelect>>', functools.partial(on_select,object='file'))
-#listbox_filenames.config(yscrollcommand=scrollbar.set)
-
-#scrollbar.config(command=listbox_filenames.yview)
-
-populate_file_list(PDFfolders,ascending=ascending_sort_order,listbox=listbox_filenames)
-
-#dirlist =
-
+listbox_filenames.bind('<<ListboxSelect>>', on_select_sync )
 file_name = StringVar()
 
 filename_entry = ttk.Entry(content,width=80,textvariable=file_name)
 filename_entry.grid(column=0, row=0)
-filename_entry.bind('<KeyRelease>', functools.partial(on_keyrelease,listbox=listbox_filenames,\
-      list=populate_file_list(PDFfolders,ascending=ascending_sort_order,listbox=listbox_filenames),method=search_method))
+filename_entry.bind('<KeyRelease>', functools.partial(on_keyrelease_sync,**{'method':'re'}) )
 
-##### Results #####
+update_files_list(current_fnames)
 
+
+
+####################
+##### Results  #####
+####################
 listbox_results = Listbox(content,width=80,height=50,listvariable=file_tags)
 #listbox_update(listbox_results,search_results_list)
 listbox_results.grid(column=0, row=0)
